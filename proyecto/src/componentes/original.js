@@ -1,61 +1,23 @@
-import { db } from '../firebaseConfig.js';
+import { db } from './firebaseConfig.js';
 import { collection, addDoc } from 'firebase/firestore';
+import '../style.css'; // ✅ Estilos globales
 
 export default function mostrarOriginal() {
-  const contenedor = document.getElementById("app");
-  contenedor.innerHTML = "<h2>Registro de personaje + datos del proyecto</h2>";
+  const app = document.getElementById("app");
 
-  const form = document.createElement("div");
-  const resultado = document.createElement("pre");
-  resultado.textContent = "Cargando personajes...";
+  // 🔘 Contenedor principal con clase para estilos
+  app.innerHTML = `
+    <div class="original-container">
+      <h2>Registro de personaje de Game of Thrones</h2>
+      <div id="formulario-original"></div>
+      <pre id="resultado-original">Cargando personajes...</pre>
+    </div>
+  `;
 
-  // 🔧 Objeto base del profe
-  let app = {
-    nombreapp: "Nombre de la app",
-    descripcion: "Aquí agregamos una descripción de 30 palabras",
-    icono: "https://cdn-icons-png.flaticon.com/512/2909/2909765.png",
-    integrantes: ["javier", "maria", "matt"],
-    actividad: "Capacitor Firebase",
-    url: "https://drive.google.com/file/d/1Kl97mmRESu2GWPztzK2XdMvNR68vMQ00/view?usp=drive_link"
-  };
+  const form = document.getElementById("formulario-original");
+  const resultado = document.getElementById("resultado-original");
 
-  // Campos editables del objeto base
-  const campos = [
-    { key: "nombreapp", label: "Nombre de la app" },
-    { key: "descripcion", label: "Descripción" },
-    { key: "icono", label: "URL del ícono" },
-    { key: "actividad", label: "Actividad" },
-    { key: "url", label: "URL del proyecto" }
-  ];
-
-  campos.forEach(({ key, label }) => {
-    const p = document.createElement("p");
-    p.textContent = label;
-    const input = document.createElement("input");
-    input.placeholder = label;
-    input.value = app[key];
-    input.oninput = () => {
-      app[key] = input.value;
-      resultado.textContent = JSON.stringify(app, null, 2);
-    };
-    form.appendChild(p);
-    form.appendChild(input);
-  });
-
-  // Campo especial: integrantes
-  const pIntegrantes = document.createElement("p");
-  pIntegrantes.textContent = "Integrantes (separados por coma):";
-  const integrantesInput = document.createElement("input");
-  integrantesInput.value = app.integrantes.join(", ");
-  integrantesInput.placeholder = "Integrantes (separados por coma):";
-  integrantesInput.oninput = () => {
-    app.integrantes = integrantesInput.value.split(",").map(i => i.trim());
-    resultado.textContent = JSON.stringify(app, null, 2);
-  };
-  form.appendChild(pIntegrantes);
-  form.appendChild(integrantesInput);
-
-  // 🔄 Campos personalizados para el personaje
+  // Inputs personalizados
   const jugadorInput = document.createElement("input");
   jugadorInput.placeholder = "Nombre del jugador";
 
@@ -66,13 +28,14 @@ export default function mostrarOriginal() {
   const personajeSelect = document.createElement("select");
   personajeSelect.innerHTML = "<option disabled selected>Selecciona un personaje</option>";
 
+  // 🔄 Cargar personajes desde la API
   fetch("https://thronesapi.com/api/v2/Characters")
     .then(res => res.json())
     .then(personajes => {
       personajes.forEach(p => {
         const option = document.createElement("option");
         option.value = JSON.stringify(p);
-        option.textContent = p.fullName;
+        option.textContent = `${p.fullName} (${p.family})`;
         personajeSelect.appendChild(option);
       });
       resultado.textContent = "Personajes cargados. Completa el formulario.";
@@ -82,9 +45,9 @@ export default function mostrarOriginal() {
       resultado.textContent = "❌ Error al cargar personajes.";
     });
 
-  // 🔘 Botón para guardar todo en Firebase
+  // 🔘 Botón para guardar en Firebase
   const botonGuardar = document.createElement("button");
-  botonGuardar.textContent = "Guardar en Firebase";
+  botonGuardar.textContent = "Guardar personaje";
 
   botonGuardar.onclick = async () => {
     const jugador = jugadorInput.value.trim();
@@ -98,8 +61,7 @@ export default function mostrarOriginal() {
 
     const personaje = JSON.parse(personajeData);
 
-    const objetoFinal = {
-      ...app,
+    const registro = {
       jugador,
       puntuacion,
       personaje: {
@@ -107,26 +69,24 @@ export default function mostrarOriginal() {
         titulo: personaje.title,
         familia: personaje.family,
         imagen: personaje.imageUrl
-      }
+      },
+      fecha: new Date().toISOString()
     };
 
-    resultado.textContent = JSON.stringify(objetoFinal, null, 2);
+    resultado.textContent = JSON.stringify(registro, null, 2);
 
     try {
-      await addDoc(collection(db, "proyectos"), objetoFinal);
-      alert("✅ Datos guardados correctamente en Firebase!");
+      await addDoc(collection(db, "personajesGoT"), registro);
+      alert("✅ Personaje guardado correctamente en Firebase!");
     } catch (error) {
-      console.error("Error al guardar en Firebase:", error);
+      console.error("Error al guardar:", error);
       alert("❌ Ocurrió un error al guardar.");
     }
   };
 
-  // Agregar campos personalizados al formulario
+  // Agregar elementos al formulario
   form.appendChild(jugadorInput);
   form.appendChild(puntuacionInput);
   form.appendChild(personajeSelect);
   form.appendChild(botonGuardar);
-
-  contenedor.appendChild(form);
-  contenedor.appendChild(resultado);
 }

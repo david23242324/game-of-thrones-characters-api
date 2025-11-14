@@ -1,17 +1,24 @@
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
-import { auth, db } from '../firebaseConfig.js'; // Ajusta el path si es diferente
+import { auth, db } from './firebaseConfig.js';
+import mostrarLogin from './login.js'; // ✅ Import necesario
+import '../style.css'; // ✅ Estilos globales
 
 export default function mostrarRegistro() {
   const app = document.getElementById("app");
+
   app.innerHTML = `
-    <h2>Registro</h2>
-    <input type="text" id="nombre" placeholder="Nombre"><br>
-    <input type="email" id="correo" placeholder="Correo electrónico"><br>
-    <input type="password" id="contrasena" placeholder="Contraseña"><br>
-    <input type="text" id="fecha" placeholder="Fecha de nacimiento"><br>
-    <input type="tel" id="telefono" placeholder="Teléfono"><br>
-    <button id="btnRegistro">Registrarse</button>
+    <div class="registro-container">
+      <div class="registro-box">
+        <h2>Registro</h2>
+        <input type="text" id="nombre" placeholder="Nombre" />
+        <input type="email" id="correo" placeholder="Correo electrónico" />
+        <input type="password" id="contrasena" placeholder="Contraseña" />
+        <input type="text" id="fecha" placeholder="Fecha de nacimiento" />
+        <input type="tel" id="telefono" placeholder="Teléfono" />
+        <button id="btnRegistro">Registrarse</button>
+      </div>
+    </div>
   `;
 
   document.getElementById("btnRegistro").addEventListener("click", async () => {
@@ -22,6 +29,11 @@ export default function mostrarRegistro() {
     const telefono = document.getElementById("telefono").value;
     let ganados = 0;
     let perdidos = 0;
+
+    if (!nombre || !correo || !contrasena || !fecha || !telefono) {
+      alert("Por favor completa todos los campos.");
+      return;
+    }
 
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, correo, contrasena);
@@ -37,10 +49,10 @@ export default function mostrarRegistro() {
         perdidos
       });
 
-      alert('Usuario registrado correctamente');
-      mostrarLogin(); // Asegúrate de que esta función esté definida
+      alert('✅ Usuario registrado correctamente');
+      mostrarLogin();
     } catch (error) {
-      alert('Error al registrarse: ' + error.message);
+      alert('❌ Error al registrarse: ' + error.message);
     }
   });
 }
